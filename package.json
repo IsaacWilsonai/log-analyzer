@@ -1,0 +1,23 @@
+{
+  "name": "log-analyzer",
+  "version": "0.1.0",
+  "description": "A command-line tool for analyzing log files",
+  "main": "src/index.js",
+  "bin": {
+    "log-analyzer": "./bin/cli.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "keywords": ["log", "analyzer", "cli", "monitoring", "parsing"],
+  "author": "Isaac Wilson",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^9.0.0",
+    "chalk": "^4.1.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
