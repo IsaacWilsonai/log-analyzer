@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const { program } = require('commander');
+const LogAnalyzer = require('../src/index');
 const packageJson = require('../package.json');
 
 program
@@ -18,8 +19,28 @@ if (!options.file) {
   process.exit(1);
 }
 
-console.log(`Analyzing log file: ${options.file}`);
-console.log(`Log type: ${options.type}`);
+async function main() {
+  try {
+    if (options.verbose) {
+      console.log(`Analyzing log file: ${options.file}`);
+      console.log(`Log type: ${options.type}`);
+    }
+    
+    const analyzer = new LogAnalyzer(options.file, options.type);
+    const report = await analyzer.analyze();
+    
+    console.log('\n=== Log Analysis Report ===');
+    console.log(`File: ${report.file}`);
+    console.log(`Type: ${report.type}`);
+    console.log(`Total lines: ${report.stats.totalLines}`);
+    console.log(`Errors found: ${report.stats.errors}`);
+    console.log(`Warnings found: ${report.stats.warnings}`);
+    console.log(`\nSummary: ${report.summary}`);
+    
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+}
 
-// TODO: Implement actual log analysis
-console.log('Log analysis functionality coming soon...');
+main();
