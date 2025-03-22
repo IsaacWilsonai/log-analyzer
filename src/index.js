@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const NginxParser = require('./parsers/nginx');
+const ApacheParser = require('./parsers/apache');
 
 class LogAnalyzer {
   constructor(filePath, logType = 'generic') {
@@ -11,6 +13,21 @@ class LogAnalyzer {
       errors: 0,
       warnings: 0
     };
+    
+    this.initializeParser();
+  }
+
+  initializeParser() {
+    switch (this.logType.toLowerCase()) {
+      case 'nginx':
+        this.parser = new NginxParser();
+        break;
+      case 'apache':
+        this.parser = new ApacheParser();
+        break;
+      default:
+        this.parser = null;
+    }
   }
 
   async analyze() {
@@ -33,16 +50,26 @@ class LogAnalyzer {
       } else if (line.toLowerCase().includes('warn')) {
         this.stats.warnings++;
       }
+
+      if (this.parser) {
+        this.parser.parseLine(line);
+      }
     });
   }
 
   generateReport() {
-    return {
+    const report = {
       file: this.filePath,
       type: this.logType,
       stats: this.stats,
       summary: `Analyzed ${this.stats.totalLines} lines, found ${this.stats.errors} errors and ${this.stats.warnings} warnings`
     };
+
+    if (this.parser) {
+      report.detailedStats = this.parser.getStats();
+    }
+
+    return report;
   }
 }
 

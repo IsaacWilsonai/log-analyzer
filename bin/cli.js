@@ -35,6 +35,27 @@ async function main() {
     console.log(`Total lines: ${report.stats.totalLines}`);
     console.log(`Errors found: ${report.stats.errors}`);
     console.log(`Warnings found: ${report.stats.warnings}`);
+    
+    if (report.detailedStats) {
+      console.log('\n=== Detailed Statistics ===');
+      
+      if (report.detailedStats.statusCodes) {
+        console.log('Status Codes:', JSON.stringify(report.detailedStats.statusCodes, null, 2));
+      }
+      
+      if (report.detailedStats.methods) {
+        console.log('HTTP Methods:', JSON.stringify(report.detailedStats.methods, null, 2));
+      }
+      
+      if (report.detailedStats.topIps) {
+        console.log('Top IPs:', report.detailedStats.topIps);
+      }
+      
+      if (report.detailedStats.bytesTransferred) {
+        console.log(`Bytes Transferred: ${report.detailedStats.bytesTransferred}`);
+      }
+    }
+    
     console.log(`\nSummary: ${report.summary}`);
     
   } catch (error) {
