@@ -2,6 +2,7 @@
 
 const { program } = require('commander');
 const LogAnalyzer = require('../src/index');
+const LogWatcher = require('../src/watcher');
 const packageJson = require('../package.json');
 
 program
@@ -9,6 +10,7 @@ program
   .description('Log analyzer tool for parsing and analyzing log files')
   .option('-f, --file <path>', 'path to log file')
   .option('-t, --type <type>', 'log type (nginx, apache, generic)', 'generic')
+  .option('-w, --watch', 'watch file for real-time monitoring')
   .option('-v, --verbose', 'verbose output')
   .parse();
 
@@ -21,6 +23,14 @@ if (!options.file) {
 
 async function main() {
   try {
+    if (options.watch) {
+      const watcher = new LogWatcher(options.file, options.type, {
+        verbose: options.verbose
+      });
+      watcher.start();
+      return;
+    }
+    
     if (options.verbose) {
       console.log(`Analyzing log file: ${options.file}`);
       console.log(`Log type: ${options.type}`);
