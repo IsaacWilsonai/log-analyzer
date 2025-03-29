@@ -15,30 +15,57 @@ class LogWatcher {
   }
 
   start() {
-    if (!fs.existsSync(this.filePath)) {
-      console.error(`File not found: ${this.filePath}`);
-      return;
+    try {
+      if (!fs.existsSync(this.filePath)) {
+        console.error(`File not found: ${this.filePath}`);
+        return;
+      }
+
+      const stats = fs.statSync(this.filePath);
+      if (!stats.isFile()) {
+        console.error(`Path is not a file: ${this.filePath}`);
+        return;
+      }
+
+      this.lastPosition = stats.size;
+      
+      console.log(`Watching ${this.filePath} for changes...`);
+      console.log('Press Ctrl+C to stop\n');
+
+      const watcher = chokidar.watch(this.filePath, {
+        ignoreInitial: true,
+        persistent: true
+      });
+
+      watcher.on('change', () => {
+        this.processNewContent();
+      });
+
+      watcher.on('error', (error) => {
+        console.error('Watcher error:', error.message);
+      });
+
+      watcher.on('unlink', () => {
+        console.log('File was deleted, stopping watcher...');
+        watcher.close();
+        process.exit(0);
+      });
+
+      process.on('SIGINT', () => {
+        console.log('\nStopping log watcher...');
+        watcher.close();
+        process.exit(0);
+      });
+
+      process.on('SIGTERM', () => {
+        console.log('\nReceived SIGTERM, stopping log watcher...');
+        watcher.close();
+        process.exit(0);
+      });
+    } catch (error) {
+      console.error('Failed to start watcher:', error.message);
+      process.exit(1);
     }
-
-    this.lastPosition = fs.statSync(this.filePath).size;
-    
-    console.log(`Watching ${this.filePath} for changes...`);
-    console.log('Press Ctrl+C to stop\n');
-
-    const watcher = chokidar.watch(this.filePath, {
-      ignoreInitial: true,
-      persistent: true
-    });
-
-    watcher.on('change', () => {
-      this.processNewContent();
-    });
-
-    process.on('SIGINT', () => {
-      console.log('\nStopping log watcher...');
-      watcher.close();
-      process.exit(0);
-    });
   }
 
   processNewContent() {

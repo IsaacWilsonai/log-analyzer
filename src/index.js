@@ -32,14 +32,38 @@ class LogAnalyzer {
 
   async analyze() {
     try {
+      if (!fs.existsSync(this.filePath)) {
+        throw new Error(`Log file does not exist: ${this.filePath}`);
+      }
+
+      const stats = fs.statSync(this.filePath);
+      if (!stats.isFile()) {
+        throw new Error(`Path is not a file: ${this.filePath}`);
+      }
+
+      if (stats.size === 0) {
+        console.log('Warning: Log file is empty');
+        return this.generateReport();
+      }
+
       const content = fs.readFileSync(this.filePath, 'utf8');
       this.lines = content.split('\n').filter(line => line.trim() !== '');
       this.stats.totalLines = this.lines.length;
       
+      if (this.lines.length === 0) {
+        console.log('Warning: No valid log entries found');
+      }
+      
       this.parseLines();
       return this.generateReport();
     } catch (error) {
-      throw new Error(`Failed to read log file: ${error.message}`);
+      if (error.code === 'ENOENT') {
+        throw new Error(`Log file not found: ${this.filePath}`);
+      } else if (error.code === 'EACCES') {
+        throw new Error(`Permission denied: ${this.filePath}`);
+      } else {
+        throw new Error(`Failed to read log file: ${error.message}`);
+      }
     }
   }
 
