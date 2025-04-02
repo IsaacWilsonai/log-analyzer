@@ -2,14 +2,21 @@ const fs = require('fs');
 const path = require('path');
 const NginxParser = require('./parsers/nginx');
 const ApacheParser = require('./parsers/apache');
+const SyslogParser = require('./parsers/syslog');
+const IISParser = require('./parsers/iis');
+const JSONLogParser = require('./parsers/json-logs');
+const LogFilter = require('./filters');
+const StreamLogAnalyzer = require('./stream-analyzer');
 
 class LogAnalyzer {
-  constructor(filePath, logType = 'generic') {
+  constructor(filePath, logType = 'generic', filter = null) {
     this.filePath = filePath;
     this.logType = logType;
     this.lines = [];
+    this.filter = filter;
     this.stats = {
       totalLines: 0,
+      filteredLines: 0,
       errors: 0,
       warnings: 0
     };
@@ -25,12 +32,21 @@ class LogAnalyzer {
       case 'apache':
         this.parser = new ApacheParser();
         break;
+      case 'syslog':
+        this.parser = new SyslogParser();
+        break;
+      case 'iis':
+        this.parser = new IISParser();
+        break;
+      case 'json':
+        this.parser = new JSONLogParser();
+        break;
       default:
         this.parser = null;
     }
   }
 
-  async analyze() {
+  async analyze(onProgress = null) {
     try {
       if (!fs.existsSync(this.filePath)) {
         throw new Error(`Log file does not exist: ${this.filePath}`);
@@ -46,9 +62,26 @@ class LogAnalyzer {
         return this.generateReport();
       }
 
+      if (StreamLogAnalyzer.shouldUseStream(this.filePath)) {
+        if (onProgress) console.log('Using stream processing for large file...');
+        const streamAnalyzer = new StreamLogAnalyzer(this.filePath, this.logType, this.filter);
+        return await streamAnalyzer.analyzeStream(onProgress);
+      }
+
       const content = fs.readFileSync(this.filePath, 'utf8');
-      this.lines = content.split('\n').filter(line => line.trim() !== '');
-      this.stats.totalLines = this.lines.length;
+      const allLines = content.split('\n').filter(line => line.trim() !== '');
+      this.stats.totalLines = allLines.length;
+      
+      if (this.filter) {
+        this.lines = allLines.filter(line => {
+          const parsedData = this.parser ? this.parser.parseLine(line) : null;
+          return this.filter.shouldIncludeLine(line, parsedData);
+        });
+        this.stats.filteredLines = this.lines.length;
+      } else {
+        this.lines = allLines;
+        this.stats.filteredLines = this.lines.length;
+      }
       
       if (this.lines.length === 0) {
         console.log('Warning: No valid log entries found');

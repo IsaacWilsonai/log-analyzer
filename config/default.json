@@ -1,0 +1,26 @@
+{
+  "parsers": {
+    "nginx": {
+      "format": "combined",
+      "timeFormat": "DD/MMM/YYYY:HH:mm:ss ZZ"
+    },
+    "apache": {
+      "format": "common",
+      "timeFormat": "DD/MMM/YYYY:HH:mm:ss ZZ"
+    }
+  },
+  "watcher": {
+    "pollInterval": 1000,
+    "ignoreInitial": true
+  },
+  "output": {
+    "colors": true,
+    "showProgress": true,
+    "maxLines": 10000
+  },
+  "filters": {
+    "minSeverity": "info",
+    "excludeIPs": [],
+    "includeStatusCodes": []
+  }
+}
